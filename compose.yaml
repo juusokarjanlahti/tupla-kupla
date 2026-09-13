@@ -1,0 +1,27 @@
+# Pinned so the container and volume names don't depend on the checkout directory.
+name: tupla-kupla
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: tupla-kupla-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tuplakupla}
+      POSTGRES_USER: ${POSTGRES_USER:-tuplakupla}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tuplakupla}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Postgres 18+ images keep data in a major-version subdirectory, so the mount
+      # goes at /var/lib/postgresql rather than /var/lib/postgresql/data.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tuplakupla} -d ${POSTGRES_DB:-tuplakupla}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  db-data:
