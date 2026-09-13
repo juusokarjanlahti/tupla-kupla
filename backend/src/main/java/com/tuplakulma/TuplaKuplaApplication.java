@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class TuplaKuplaApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TuplaKuplaApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(TuplaKuplaApplication.class, args);
+  }
 }
