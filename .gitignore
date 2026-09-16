@@ -1,3 +1,7 @@
+# Windows "mark of the web" streams, created when a file is extracted from a
+# downloaded archive. They are metadata about the download, never project content.
+*:Zone.Identifier
+
 # Compiled class file
 *.class
 
