@@ -6,6 +6,17 @@ Spring Boot backend, built with Maven.
 
 JDK 25. Use the bundled wrapper (`./mvnw`) rather than a system Maven.
 
+## Database migrations
+
+Schema changes go through [Flyway](https://flywaydb.org/), not Hibernate — `spring.jpa.hibernate.ddl-auto=validate`
+only checks that the entities match the schema, it never modifies it. Migrations run
+automatically against the configured database on application startup.
+
+Add a new migration as a SQL file in `src/main/resources/db/migration`, named
+`V<next-number>__<description>.sql` (e.g. `V2__add_product_table.sql`). Flyway tracks
+which migrations have run in the `flyway_schema_history` table, so an applied file must
+never be edited afterwards — write a new migration instead.
+
 ## Formatting
 
 Java sources are formatted with [Spotless](https://github.com/diffplug/spotless) using
