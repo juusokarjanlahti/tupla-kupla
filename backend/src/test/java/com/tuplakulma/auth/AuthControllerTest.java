@@ -51,8 +51,7 @@ class AuthControllerTest {
     given(jwtService.getExpirationMs()).willReturn(900_000L);
     given(authService.register(any()))
         .willReturn(
-            new AuthResult(
-                new UserResponse(1L, "user@example.com"), "a-token", "a-refresh-token"));
+            new AuthResult(new UserResponse(1L, "user@example.com"), "a-token", "a-refresh-token"));
 
     mockMvc
         .perform(
@@ -91,8 +90,7 @@ class AuthControllerTest {
     given(jwtService.getExpirationMs()).willReturn(900_000L);
     given(authService.login(any()))
         .willReturn(
-            new AuthResult(
-                new UserResponse(1L, "user@example.com"), "a-token", "a-refresh-token"));
+            new AuthResult(new UserResponse(1L, "user@example.com"), "a-token", "a-refresh-token"));
 
     mockMvc
         .perform(
