@@ -1,8 +1,8 @@
 package com.tuplakulma.auth;
 
-import com.tuplakulma.auth.dto.AuthResponse;
 import com.tuplakulma.auth.dto.LoginRequest;
 import com.tuplakulma.auth.dto.RegisterRequest;
+import com.tuplakulma.auth.dto.UserResponse;
 import com.tuplakulma.security.JwtService;
 import com.tuplakulma.user.User;
 import com.tuplakulma.user.UserRepository;
@@ -25,7 +25,7 @@ public class AuthService {
     this.jwtService = jwtService;
   }
 
-  public AuthResponse register(RegisterRequest request) {
+  public AuthResult register(RegisterRequest request) {
     String email = normalizeEmail(request.email());
     if (request.password() == null || request.password().length() < MIN_PASSWORD_LENGTH) {
       throw new IllegalArgumentException(
@@ -38,10 +38,10 @@ public class AuthService {
     User user = new User(email, passwordEncoder.encode(request.password()));
     userRepository.save(user);
 
-    return new AuthResponse(jwtService.generateToken(user.getEmail()));
+    return toAuthResult(user);
   }
 
-  public AuthResponse login(LoginRequest request) {
+  public AuthResult login(LoginRequest request) {
     String email = normalizeEmail(request.email());
     User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
 
@@ -50,7 +50,17 @@ public class AuthService {
       throw new InvalidCredentialsException();
     }
 
-    return new AuthResponse(jwtService.generateToken(user.getEmail()));
+    return toAuthResult(user);
+  }
+
+  public UserResponse getCurrentUser(String email) {
+    User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
+    return new UserResponse(user.getId(), user.getEmail());
+  }
+
+  private AuthResult toAuthResult(User user) {
+    return new AuthResult(
+        new UserResponse(user.getId(), user.getEmail()), jwtService.generateToken(user.getEmail()));
   }
 
   private String normalizeEmail(String email) {
