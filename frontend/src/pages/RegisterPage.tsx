@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/useAuth'
 
 const MIN_PASSWORD_LENGTH = 8
 
@@ -16,7 +16,7 @@ export function RegisterPage() {
     return <Navigate to="/" replace />
   }
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)

@@ -1,26 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-export interface AuthUser {
-  id: number
-  email: string
-}
-
-interface AuthContextValue {
-  user: AuthUser | null
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+import { AuthContext, type AuthUser } from './AuthContext'
 
 // Must stay under the backend's access token TTL (app.jwt.expiration-ms, 15 min by
 // default) so this fires before the cookie expires rather than after.
@@ -60,7 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetch('/api/auth/me', { credentials: 'include' })
       .then((response) =>
-        response.ok ? (response.json() as Promise<AuthUser>) : refreshAccessToken(),
+        response.ok
+          ? (response.json() as Promise<AuthUser>)
+          : refreshAccessToken(),
       )
       .then((currentUser) => {
         if (!cancelled) setUser(currentUser)
@@ -131,12 +113,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
 }
