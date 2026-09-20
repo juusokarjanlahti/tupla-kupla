@@ -22,6 +22,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+// Must stay under the backend's access token TTL (app.jwt.expiration-ms, 15 min by
+// default) so this fires before the cookie expires rather than after.
+const SILENT_REFRESH_INTERVAL_MS = 14 * 60 * 1000
+
 async function parseErrorMessage(
   response: Response,
   fallback: string,
@@ -31,6 +35,18 @@ async function parseErrorMessage(
     return body.message ?? fallback
   } catch {
     return fallback
+  }
+}
+
+async function refreshAccessToken(): Promise<AuthUser | null> {
+  try {
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    })
+    return response.ok ? ((await response.json()) as AuthUser) : null
+  } catch {
+    return null
   }
 }
 
@@ -44,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetch('/api/auth/me', { credentials: 'include' })
       .then((response) =>
-        response.ok ? (response.json() as Promise<AuthUser>) : null,
+        response.ok ? (response.json() as Promise<AuthUser>) : refreshAccessToken(),
       )
       .then((currentUser) => {
         if (!cancelled) setUser(currentUser)
@@ -60,6 +76,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [])
+
+  // Keeps the session alive past the access token's 15-minute lifetime for as long as
+  // the tab stays open, by rotating the refresh token in the background. If the refresh
+  // token has also expired (or reuse was detected server-side), this signs the user out.
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(async () => {
+      const refreshedUser = await refreshAccessToken()
+      setUser(refreshedUser)
+      if (!refreshedUser) navigate('/login', { replace: true })
+    }, SILENT_REFRESH_INTERVAL_MS)
+
+    return () => clearInterval(interval)
+  }, [user, navigate])
 
   async function login(email: string, password: string) {
     const response = await fetch('/api/auth/login', {
