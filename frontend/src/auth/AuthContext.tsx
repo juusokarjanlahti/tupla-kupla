@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export interface AuthUser {
   id: number
@@ -36,6 +37,7 @@ async function parseErrorMessage(
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -90,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     setUser(null)
+    navigate('/login', { replace: true })
   }
 
   return (
