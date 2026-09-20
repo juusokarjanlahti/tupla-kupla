@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/AuthContext'
+import { useAuth } from '../auth/useAuth'
 
 export function LoginPage() {
   const { user, isLoading, login } = useAuth()
@@ -16,7 +16,7 @@ export function LoginPage() {
     return <Navigate to={from} replace />
   }
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
     setError(null)
     setIsSubmitting(true)
