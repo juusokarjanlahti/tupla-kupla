@@ -1,26 +1,10 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AuthContext, type AuthUser } from './AuthContext'
 
-export interface AuthUser {
-  id: number
-  email: string
-}
-
-interface AuthContextValue {
-  user: AuthUser | null
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+// Must stay under the backend's access token TTL (app.jwt.expiration-ms, 15 min by
+// default) so this fires before the cookie expires rather than after.
+const SILENT_REFRESH_INTERVAL_MS = 14 * 60 * 1000
 
 async function parseErrorMessage(
   response: Response,
@@ -34,6 +18,18 @@ async function parseErrorMessage(
   }
 }
 
+async function refreshAccessToken(): Promise<AuthUser | null> {
+  try {
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    })
+    return response.ok ? ((await response.json()) as AuthUser) : null
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -44,7 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetch('/api/auth/me', { credentials: 'include' })
       .then((response) =>
-        response.ok ? (response.json() as Promise<AuthUser>) : null,
+        response.ok
+          ? (response.json() as Promise<AuthUser>)
+          : refreshAccessToken(),
       )
       .then((currentUser) => {
         if (!cancelled) setUser(currentUser)
@@ -60,6 +58,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [])
+
+  // Keeps the session alive past the access token's 15-minute lifetime for as long as
+  // the tab stays open, by rotating the refresh token in the background. If the refresh
+  // token has also expired (or reuse was detected server-side), this signs the user out.
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(async () => {
+      const refreshedUser = await refreshAccessToken()
+      setUser(refreshedUser)
+      if (!refreshedUser) navigate('/login', { replace: true })
+    }, SILENT_REFRESH_INTERVAL_MS)
+
+    return () => clearInterval(interval)
+  }, [user, navigate])
 
   async function login(email: string, password: string) {
     const response = await fetch('/api/auth/login', {
@@ -100,12 +113,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
 }

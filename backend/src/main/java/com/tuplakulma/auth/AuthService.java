@@ -17,12 +17,17 @@ public class AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final RefreshTokenService refreshTokenService;
 
   public AuthService(
-      UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+      UserRepository userRepository,
+      PasswordEncoder passwordEncoder,
+      JwtService jwtService,
+      RefreshTokenService refreshTokenService) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
+    this.refreshTokenService = refreshTokenService;
   }
 
   public AuthResult register(RegisterRequest request) {
@@ -53,6 +58,16 @@ public class AuthService {
     return toAuthResult(user);
   }
 
+  public AuthResult refresh(String rawRefreshToken) {
+    RefreshTokenService.RotationResult rotation = refreshTokenService.rotate(rawRefreshToken);
+    User user =
+        userRepository.findById(rotation.userId()).orElseThrow(InvalidRefreshTokenException::new);
+    return new AuthResult(
+        new UserResponse(user.getId(), user.getEmail()),
+        jwtService.generateToken(user.getEmail()),
+        rotation.refreshToken());
+  }
+
   public UserResponse getCurrentUser(String email) {
     User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
     return new UserResponse(user.getId(), user.getEmail());
@@ -60,7 +75,9 @@ public class AuthService {
 
   private AuthResult toAuthResult(User user) {
     return new AuthResult(
-        new UserResponse(user.getId(), user.getEmail()), jwtService.generateToken(user.getEmail()));
+        new UserResponse(user.getId(), user.getEmail()),
+        jwtService.generateToken(user.getEmail()),
+        refreshTokenService.issue(user.getId()));
   }
 
   private String normalizeEmail(String email) {
