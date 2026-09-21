@@ -99,6 +99,19 @@
 					</java>
 				</configuration>
 			</plugin>
+			<!--
+				`./mvnw exec:java` runs the recommendation engine CLI playground in the same JVM as
+				Maven, so terminal stdin works for interactive prompts (unlike Surefire, which forks).
+				Deliberately not bound to a build phase; this never runs as part of CI.
+			-->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>3.6.4</version>
+				<configuration>
+					<mainClass>com.tuplakulma.matching.RecommendationCli</mainClass>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

@@ -1,5 +1,7 @@
 # tupla-kupla
 
+At it's core, this app helps people choose something to do together with someone. This is done based on available activities, the user input and what we think would be the most enjoyable and rewarding. If you use this application, actually follow through and feel better, this app works as intented. The decision is based on research about this topic and supported by experts. This implementation is just a tool that makes it available for action.
+
 ## Local development
 
 ### Database
