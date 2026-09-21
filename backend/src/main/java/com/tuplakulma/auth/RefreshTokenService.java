@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Refresh tokens are opaque, high-entropy random values rather than JWTs: unlike the access
- * token, they must be revocable on demand (logout, or reuse detection below), which a
- * self-contained signed token can't be without a server-side denylist anyway. Only a SHA-256
- * hash of each token is persisted, so a stolen database row can't be replayed as a cookie value.
+ * Refresh tokens are opaque, high-entropy random values rather than JWTs: unlike the access token,
+ * they must be revocable on demand (logout, or reuse detection below), which a self-contained
+ * signed token can't be without a server-side denylist anyway. Only a SHA-256 hash of each token is
+ * persisted, so a stolen database row can't be replayed as a cookie value.
  */
 @Service
 public class RefreshTokenService {
@@ -42,10 +42,10 @@ public class RefreshTokenService {
   }
 
   /**
-   * Validates a refresh token and rotates it: a stored token is single-use, so this revokes it
-   * and issues its replacement in the same call. A token that's already revoked is presented
-   * only if it was copied and reused after its legitimate owner already rotated past it, so that
-   * case revokes every active token for the user rather than just the one presented.
+   * Validates a refresh token and rotates it: a stored token is single-use, so this revokes it and
+   * issues its replacement in the same call. A token that's already revoked is presented only if it
+   * was copied and reused after its legitimate owner already rotated past it, so that case revokes
+   * every active token for the user rather than just the one presented.
    */
   // noRollbackFor is required here: revokeAllActiveTokensForUser's writes below must
   // commit even though this method then throws, which @Transactional would otherwise
