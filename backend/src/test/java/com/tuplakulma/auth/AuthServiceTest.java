@@ -7,15 +7,16 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.tuplakulma.auth.dto.AuthResponse;
 import com.tuplakulma.auth.dto.LoginRequest;
 import com.tuplakulma.auth.dto.RegisterRequest;
 import com.tuplakulma.security.JwtService;
 import com.tuplakulma.user.User;
 import com.tuplakulma.user.UserRepository;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,7 +30,7 @@ class AuthServiceTest {
 
   private AuthService authService;
 
-  @org.junit.jupiter.api.BeforeEach
+  @BeforeEach
   void setUp() {
     authService = new AuthService(userRepository, passwordEncoder, jwtService);
   }
@@ -40,13 +41,14 @@ class AuthServiceTest {
     when(passwordEncoder.encode("password123")).thenReturn("hashed");
     when(jwtService.generateToken("user@example.com")).thenReturn("a-token");
 
-    AuthResponse response =
+    AuthResult result =
         authService.register(new RegisterRequest("User@Example.com", "password123"));
 
-    assertThat(response.accessToken()).isEqualTo("a-token");
+    assertThat(result.accessToken()).isEqualTo("a-token");
+    assertThat(result.user().email()).isEqualTo("user@example.com");
     verify(userRepository)
         .save(
-            org.mockito.ArgumentMatchers.argThat(
+            ArgumentMatchers.argThat(
                 user ->
                     user.getEmail().equals("user@example.com")
                         && user.getPasswordHash().equals("hashed")));
@@ -74,9 +76,10 @@ class AuthServiceTest {
     when(passwordEncoder.matches("password123", "hashed")).thenReturn(true);
     when(jwtService.generateToken("user@example.com")).thenReturn("a-token");
 
-    AuthResponse response = authService.login(new LoginRequest("user@example.com", "password123"));
+    AuthResult result = authService.login(new LoginRequest("user@example.com", "password123"));
 
-    assertThat(response.accessToken()).isEqualTo("a-token");
+    assertThat(result.accessToken()).isEqualTo("a-token");
+    assertThat(result.user().email()).isEqualTo("user@example.com");
   }
 
   @Test
@@ -96,6 +99,24 @@ class AuthServiceTest {
 
     assertThatThrownBy(
             () -> authService.login(new LoginRequest("user@example.com", "wrong-password")))
+        .isInstanceOf(InvalidCredentialsException.class);
+  }
+
+  @Test
+  void getCurrentUserReturnsMatchingUser() {
+    User user = new User("user@example.com", "hashed");
+    when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+
+    var response = authService.getCurrentUser("user@example.com");
+
+    assertThat(response.email()).isEqualTo("user@example.com");
+  }
+
+  @Test
+  void getCurrentUserThrowsWhenUserNoLongerExists() {
+    when(userRepository.findByEmail("gone@example.com")).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> authService.getCurrentUser("gone@example.com"))
         .isInstanceOf(InvalidCredentialsException.class);
   }
 }
