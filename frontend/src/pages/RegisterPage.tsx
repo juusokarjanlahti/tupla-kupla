@@ -1,19 +1,19 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
-export function LoginPage() {
-  const { user, isLoading, login } = useAuth()
+const MIN_PASSWORD_LENGTH = 8
+
+export function RegisterPage() {
+  const { user, isLoading, register } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isLoading && user) {
-    const from = (location.state as { from?: string } | null)?.from ?? '/'
-    return <Navigate to={from} replace />
+    return <Navigate to="/" replace />
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -21,10 +21,10 @@ export function LoginPage() {
     setError(null)
     setIsSubmitting(true)
     try {
-      await login(email, password)
+      await register(email, password)
       navigate('/', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
       setIsSubmitting(false)
     }
@@ -32,7 +32,7 @@ export function LoginPage() {
 
   return (
     <main>
-      <h1>Log in</h1>
+      <h1>Register</h1>
       <form onSubmit={handleSubmit}>
         <label>
           Email
@@ -49,16 +49,17 @@ export function LoginPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            minLength={MIN_PASSWORD_LENGTH}
             required
           />
         </label>
         {error && <p role="alert">{error}</p>}
         <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Logging in...' : 'Log in'}
+          {isSubmitting ? 'Registering...' : 'Register'}
         </button>
       </form>
       <p>
-        Don&apos;t have an account? <Link to="/register">Register</Link>
+        Already have an account? <Link to="/login">Log in</Link>
       </p>
     </main>
   )
