@@ -2,10 +2,12 @@ package com.tuplakulma.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,9 +25,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
+  private final String cookieName;
 
-  public JwtAuthenticationFilter(JwtService jwtService) {
+  public JwtAuthenticationFilter(
+      JwtService jwtService, @Value("${app.jwt.cookie-name}") String cookieName) {
     this.jwtService = jwtService;
+    this.cookieName = cookieName;
   }
 
   @Override
@@ -48,6 +53,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   private String extractToken(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if (cookieName.equals(cookie.getName())) {
+          return cookie.getValue();
+        }
+      }
+    }
     String header = request.getHeader(HttpHeaders.AUTHORIZATION);
     if (header != null && header.startsWith("Bearer ")) {
       return header.substring(7);

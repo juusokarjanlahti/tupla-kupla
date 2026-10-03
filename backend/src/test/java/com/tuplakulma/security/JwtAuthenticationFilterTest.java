@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -20,7 +21,8 @@ class JwtAuthenticationFilterTest {
 
   private final JwtService jwtService =
       new JwtService("test-secret-key-at-least-32-bytes-long!!", 60_000);
-  private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
+  private final JwtAuthenticationFilter filter =
+      new JwtAuthenticationFilter(jwtService, "access_token");
 
   @Mock private FilterChain filterChain;
 
@@ -41,6 +43,19 @@ class JwtAuthenticationFilterTest {
     assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
         .isEqualTo("user@example.com");
     verify(filterChain).doFilter(request, response);
+  }
+
+  @Test
+  void authenticatesRequestCarryingAValidCookie() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setCookies(new Cookie("access_token", jwtService.generateToken("user@example.com")));
+    HttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, filterChain);
+
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+    assertThat(SecurityContextHolder.getContext().getAuthentication().getName())
+        .isEqualTo("user@example.com");
   }
 
   @Test
