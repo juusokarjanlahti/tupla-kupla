@@ -1,0 +1,61 @@
+.interest-form-hint {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-6);
+  max-width: 32rem;
+}
+
+.interest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.interest-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr 3rem;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.interest-row label {
+  text-transform: capitalize;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.interest-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+.interest-row input[type='range']:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.interest-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.interest-form-error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+@media (max-width: 420px) {
+  .interest-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .interest-value {
+    text-align: left;
+  }
+}
